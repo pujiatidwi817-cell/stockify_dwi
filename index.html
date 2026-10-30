@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STOCKIFY — Aplikasi Stok Barang</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--text:#182230;--muted:#667085;--primary:#2563eb;--primary2:#1d4ed8;--green:#15803d;--red:#b91c1c;--border:#e4eaf2;--shadow:0 8px 24px rgba(16,24,40,.06)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+header{background:linear-gradient(120deg,#172554,#2563eb);color:white;padding:24px max(20px,calc((100% - 1200px)/2));}
+.brand{font-size:25px;font-weight:800;letter-spacing:.5px}.subtitle{opacity:.85;margin-top:6px;font-size:14px}
+main{max-width:1200px;margin:24px auto;padding:0 18px 40px}.notice{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;padding:12px 14px;border-radius:10px;margin-bottom:18px;font-size:13px;line-height:1.5}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}.stat,.panel{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
+.stat{padding:18px}.stat .label{font-size:13px;color:var(--muted)}.stat .value{font-size:27px;font-weight:800;margin-top:8px;overflow-wrap:anywhere}.stat .hint{font-size:12px;color:var(--muted);margin-top:5px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}.panel{padding:20px}.panel h2{font-size:17px;margin:0 0 16px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-size:12px;font-weight:700;color:#475467}input,select,textarea{width:100%;padding:11px 12px;border:1px solid #d0d5dd;border-radius:9px;font:inherit;background:#fff;color:var(--text);min-width:0}input:focus,select:focus,textarea:focus{outline:2px solid #bfdbfe;border-color:var(--primary)}button{border:0;border-radius:9px;padding:11px 14px;font-weight:700;font-size:13px;cursor:pointer;transition:.15s}button:hover{filter:brightness(.96);transform:translateY(-1px)}.btn-primary{background:var(--primary);color:#fff}.btn-dark{background:#182230;color:#fff}.btn-light{background:#eef2f7;color:#344054}.btn-danger{background:#fee2e2;color:#991b1b}.btn-green{background:#dcfce7;color:#166534}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.table-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}.table-head h2{margin:0}.search{max-width:300px}.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:650px}th,td{padding:12px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:13px}th{color:#667085;background:#f8fafc;font-size:11px;text-transform:uppercase;letter-spacing:.4px}td strong{font-weight:700}.pill{display:inline-block;border-radius:99px;padding:4px 8px;font-size:11px;font-weight:800}.pill-ok{background:#dcfce7;color:#166534}.pill-low{background:#fef3c7;color:#92400e}.pill-out{background:#fee2e2;color:#991b1b}.empty{text-align:center;padding:28px;color:var(--muted)}.section{margin-top:18px}.footer{text-align:center;color:#98a2b3;font-size:12px;padding:22px}.small{font-size:12px;color:var(--muted);line-height:1.5}.hidden{display:none!important}
+@media(max-width:850px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:1fr}}@media(max-width:480px){header{padding:20px}.stats{gap:9px}.stat{padding:13px}.stat .value{font-size:22px}.panel{padding:15px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.table-head{align-items:stretch}.search{max-width:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">📦 STOCKIFY</div>
+  <div class="subtitle">Aplikasi pencatatan dan perhitungan stok barang otomatis</div>
+</header>
+<main>
+  <div class="notice"><strong>Catatan:</strong> Data disimpan di browser/perangkat ini. Jangan hapus data browser jika belum membuat cadangan. File ini bisa dibuka langsung tanpa instalasi, tetapi tidak otomatis online atau tersinkron ke perangkat lain.</div>
+
+  <section class="stats">
+    <div class="stat"><div class="label">Jenis Barang</div><div class="value" id="statKinds">0</div><div class="hint">Jumlah produk terdaftar</div></div>
+    <div class="stat"><div class="label">Total Unit Stok</div><div class="value" id="statUnits">0</div><div class="hint">Akumulasi seluruh stok</div></div>
+    <div class="stat"><div class="label">Nilai Persediaan</div><div class="value" id="statValue">Rp0</div><div class="hint">Stok × harga modal</div></div>
+    <div class="stat"><div class="label">Stok Menipis</div><div class="value" id="statLow">0</div><div class="hint">Stok sama dengan/bawah batas minimum</div></div>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h2>➕ Tambah Barang Baru</h2>
+      <form id="productForm">
+        <div class="form-grid">
+          <div class="field"><label for="pName">Nama barang *</label><input id="pName" required placeholder="Contoh: Pulpen biru"></div>
+          <div class="field"><label for="pCode">Kode barang</label><input id="pCode" placeholder="Contoh: BRG001"></div>
+          <div class="field"><label for="pCategory">Kategori</label><input id="pCategory" placeholder="Contoh: Alat tulis"></div>
+          <div class="field"><label for="pUnit">Satuan</label><select id="pUnit"><option value="pcs">pcs</option><option value="unit">unit</option><option value="box">box</option><option value="pack">pack</option><option value="kg">kg</option><option value="liter">liter</option><option value="lusin">lusin</option></select></div>
+          <div class="field"><label for="pCost">Harga modal (Rp) *</label><input id="pCost" type="number" min="0" step="1" required placeholder="10000"></div>
+          <div class="field"><label for="pPrice">Harga jual (Rp)</label><input id="pPrice" type="number" min="0" step="1" value="0"></div>
+          <div class="field"><label for="pStock">Stok awal *</label><input id="pStock" type="number" min="0" step="1" required value="0"></div>
+          <div class="field"><label for="pMin">Batas stok minimum</label><input id="pMin" type="number" min="0" step="1" value="5"></div>
+        </div>
+        <div class="actions"><button class="btn-primary" type="submit">Simpan Barang</button><button class="btn-light" type="reset">Kosongkan</button></div>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>🔄 Catat Barang Masuk / Keluar</h2>
+      <form id="movementForm">
+        <div class="form-grid">
+          <div class="field full"><label for="mProduct">Pilih barang *</label><select id="mProduct" required><option value="">-- Tambahkan barang terlebih dahulu --</option></select></div>
+          <div class="field"><label for="mType">Jenis transaksi *</label><select id="mType"><option value="Masuk">Barang masuk (+)</option><option value="Keluar">Barang keluar (−)</option></select></div>
+          <div class="field"><label for="mQty">Jumlah *</label><input id="mQty" type="number" min="1" step="1" required placeholder="Misal: 10"></div>
+          <div class="field full"><label for="mNote">Keterangan</label><input id="mNote" placeholder="Contoh: pembelian dari pemasok"></div>
+        </div>
+        <div class="actions"><button class="btn-primary" type="submit">Simpan Transaksi</button></div>
+        <p class="small">Stok dihitung otomatis. Transaksi barang keluar tidak bisa melebihi stok yang tersedia.</p>
+      </form>
+    </div>
+  </section>
+
+  <section class="panel section">
+    <div class="table-head"><h2>📋 Daftar Stok Barang</h2><input class="search" id="searchProduct" placeholder="Cari nama/kode/kategori..."></div>
+    <div class="table-wrap"><table><thead><tr><th>Kode / Nama</th><th>Kategori</th><th>Stok</th><th>Harga Modal</th><th>Harga Jual</th><th>Nilai Stok</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="productRows"></tbody></table></div>
+    <div class="actions"><button class="btn-light" id="exportProducts">Unduh Stok (CSV)</button><button class="btn-light" id="backupData">Cadangkan Data (JSON)</button><button class="btn-danger" id="clearData">Hapus Semua Data</button></div>
+  </section>
+
+  <section class="panel section">
+    <div class="table-head"><h2>🧾 Riwayat Transaksi</h2><input class="search" id="searchHistory" placeholder="Cari transaksi..."></div>
+    <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Barang</th><th>Jenis</th><th>Jumlah</th><th>Keterangan</th><th>Stok Setelah</th></tr></thead><tbody id="historyRows"></tbody></table></div>
+    <div class="actions"><button class="btn-light" id="exportHistory">Unduh Riwayat (CSV)</button><button class="btn-light" id="restoreData">Pulihkan dari JSON</button><input type="file" id="restoreFile" accept=".json,application/json" class="hidden"></div>
+  </section>
+  <div class="footer">STOCKIFY • Aplikasi stok sederhana untuk penggunaan lokal</div>
+</main>
+<script>
+const KEY='stockify_v1_data';
+let state={products:[],history:[]};
+const $=id=>document.getElementById(id);
+const rupiah=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
+const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function load(){try{const saved=localStorage.getItem(KEY);if(saved)state=JSON.parse(saved);if(!Array.isArray(state.products)||!Array.isArray(state.history))throw 0;}catch(e){state={products:[],history:[]};}}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render();}
+function dateText(iso){return new Date(iso).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'});}
+function render(){
+  $('statKinds').textContent=state.products.length;
+  $('statUnits').textContent=state.products.reduce((a,p)=>a+Number(p.stock),0).toLocaleString('id-ID');
+  $('statValue').textContent=rupiah(state.products.reduce((a,p)=>a+Number(p.stock)*Number(p.cost),0));
+  $('statLow').textContent=state.products.filter(p=>Number(p.stock)<=Number(p.min)).length;
+  const selected=$('mProduct').value;
+  $('mProduct').innerHTML='<option value="">-- Pilih barang --</option>'+state.products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)} (stok: ${p.stock} ${escapeHtml(p.unit)})</option>`).join('');
+  if(state.products.some(p=>p.id===selected))$('mProduct').value=selected;
+  const q=$('searchProduct').value.toLowerCase();
+  const products=state.products.filter(p=>[p.name,p.code,p.category].join(' ').toLowerCase().includes(q));
+  $('productRows').innerHTML=products.length?products.map(p=>{
+    const status=Number(p.stock)<=0?'<span class="pill pill-out">Habis</span>':Number(p.stock)<=Number(p.min)?'<span class="pill pill-low">Menipis</span>':'<span class="pill pill-ok">Aman</span>';
+    return `<tr><td><strong>${escapeHtml(p.name)}</strong><br><span class="small">${escapeHtml(p.code||'-')} · ${escapeHtml(p.unit)}</span></td><td>${escapeHtml(p.category||'-')}</td><td><strong>${Number(p.stock).toLocaleString('id-ID')}</strong></td><td>${rupiah(p.cost)}</td><td>${rupiah(p.price)}</td><td>${rupiah(Number(p.stock)*Number(p.cost))}</td><td>${status}</td><td><button class="btn-danger" onclick="deleteProduct('${p.id}')">Hapus</button></td></tr>`;
+  }).join(''):'<tr><td colspan="8" class="empty">Belum ada barang. Tambahkan barang melalui formulir di atas.</td></tr>';
+  const hq=$('searchHistory').value.toLowerCase();
+  const hist=state.history.filter(h=>[h.name,h.type,h.note,h.code].join(' ').toLowerCase().includes(hq));
+  $('historyRows').innerHTML=hist.length?hist.map(h=>`<tr><td>${dateText(h.date)}</td><td><strong>${escapeHtml(h.name)}</strong><br><span class="small">${escapeHtml(h.code||'-')}</span></td><td><span class="pill ${h.type==='Masuk'?'pill-ok':'pill-low'}">${h.type}</span></td><td>${h.type==='Masuk'?'+':'−'}${Number(h.qty).toLocaleString('id-ID')}</td><td>${escapeHtml(h.note||'-')}</td><td>${Number(h.after).toLocaleString('id-ID')}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">Belum ada transaksi.</td></tr>';
+}
+$('productForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const name=$('pName').value.trim(), code=$('pCode').value.trim()||('BRG'+Date.now().toString().slice(-6));
+  if(state.products.some(p=>p.code.toLowerCase()===code.toLowerCase())){alert('Kode barang sudah digunakan. Gunakan kode lain.');return;}
+  const p={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name,code,category:$('pCategory').value.trim(),unit:$('pUnit').value,cost:Number($('pCost').value),price:Number($('pPrice').value)||0,stock:Number($('pStock').value),min:Number($('pMin').value)||0};
+  state.products.push(p);
+  if(p.stock>0)state.history.unshift({date:new Date().toISOString(),name:p.name,code:p.code,type:'Masuk',qty:p.stock,note:'Stok awal',after:p.stock});
+  e.target.reset();$('pStock').value=0;$('pPrice').value=0;$('pMin').value=5;save();alert('Barang berhasil disimpan!');
+});
+$('movementForm').addEventListener('submit',e=>{
+  e.preventDefault();const p=state.products.find(x=>x.id===$('mProduct').value);const qty=Number($('mQty').value);const type=$('mType').value;
+  if(!p){alert('Pilih barang terlebih dahulu.');return;}if(!Number.isInteger(qty)||qty<=0){alert('Jumlah harus berupa bilangan bulat lebih dari nol.');return;}
+  if(type==='Keluar'&&qty>p.stock){alert(`Stok tidak cukup. Stok tersedia: ${p.stock} ${p.unit}.`);return;}
+  p.stock+=type==='Masuk'?qty:-qty;
+  state.history.unshift({date:new Date().toISOString(),name:p.name,code:p.code,type,qty,note:$('mNote').value.trim(),after:p.stock});
+  $('mQty').value='';$('mNote').value='';save();alert('Transaksi tersimpan. Stok telah diperbarui otomatis.');
+});
+function deleteProduct(id){const p=state.products.find(x=>x.id===id);if(!p)return;if(confirm(`Hapus barang "${p.name}"? Riwayat transaksi lama akan tetap ada.`)){state.products=state.products.filter(x=>x.id!==id);save();}}
+window.deleteProduct=deleteProduct;
+$('searchProduct').addEventListener('input',render);$('searchHistory').addEventListener('input',render);
+function csvDownload(filename,rows){const csv=rows.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();URL.revokeObjectURL(a.href);}
+$('exportProducts').onclick=()=>csvDownload('stok-stockify.csv',[['Kode','Nama Barang','Kategori','Satuan','Stok','Harga Modal','Harga Jual','Nilai Stok','Minimum'],...state.products.map(p=>[p.code,p.name,p.category,p.unit,p.stock,p.cost,p.price,p.stock*p.cost,p.min])]);
+$('exportHistory').onclick=()=>csvDownload('riwayat-stockify.csv',[['Tanggal','Kode','Nama Barang','Jenis','Jumlah','Keterangan','Stok Setelah'],...state.history.map(h=>[dateText(h.date),h.code,h.name,h.type,h.qty,h.note,h.after])]);
+$('backupData').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cadangan-stockify.json';a.click();URL.revokeObjectURL(a.href);};
+$('restoreData').onclick=()=>$('restoreFile').click();
+$('restoreFile').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const data=JSON.parse(await file.text());if(!Array.isArray(data.products)||!Array.isArray(data.history))throw new Error();if(confirm('Pulihkan data dari file ini? Data saat ini akan diganti.')){state=data;save();alert('Data berhasil dipulihkan.');}}catch(err){alert('File cadangan tidak valid.');}e.target.value='';});
+$('clearData').onclick=()=>{if(confirm('Yakin ingin menghapus SEMUA barang dan riwayat? Sebaiknya unduh cadangan dahulu.')){state={products:[],history:[]};save();}};
+load();render();
+</script>
+</body>
+</html>
